@@ -1,0 +1,275 @@
+<html>
+	<head>
+		<title></title>
+		<style>      
+                html, body {margin: 0px;padding: 0px;}
+                canvas { width: 100%; height: 100% }
+                </style>
+                                   <script>
+                     function init()
+                     {
+                         var host = "ws://mertex.eu:12345/server.php";
+  try{
+    socket = new WebSocket(host);
+    //alert('WebSocket - status '+socket.readyState);
+    //socket.onopen    = function(msg){ console.log("Welcome - status "+this.readyState); };
+    socket.onmessage = function(msg){ otocenieI = parseFloat(msg.data) };
+    //socket.onclose   = function(msg){ console.log("Disconnected - status "+this.readyState); };
+  }
+  catch(ex){ alert(ex); }
+                     }
+                   </script>
+	</head>
+        <body onload="init();">
+            <script src="js/libs/three.js/Three.js"></script>
+            <script src="stats.js"></script>
+            <script> 
+                    //start game
+			var scene = new THREE.Scene();
+			var camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 60);
+                        
+                        var ambient = new THREE.AmbientLight(0xff4040);
+                        scene.add(ambient);
+
+			var renderer = new THREE.WebGLRenderer();
+			renderer.setSize(window.innerWidth, window.innerHeight);
+			document.body.appendChild(renderer.domElement);
+                        
+                        //PREMENNE
+                        var a = 4;
+                        var v = 2.83;
+                        var x = 0;
+                        var y = 0;
+                        var vnutorneR = 4.83;
+                        var otocenieI = 0;
+                        
+                        var speed = 0.33;
+                        
+                        var otocenie = 180;
+                        
+                        //ovladanie
+                        //  controls = new THREE.TrackballControls( camera );
+                        //controls.target.set( 0, 0, 0 )
+                        
+                        //hmla
+                        scene.fog = new THREE.Fog(0x000011, 10, 60);
+                        
+                        //univerzalny material
+                        var textureImage = THREE.ImageUtils.loadTexture("tex2.png");
+                        var textureImage2 = THREE.ImageUtils.loadTexture("tex3.png");
+                        var mat1 = new THREE.MeshBasicMaterial({map: textureImage, side: 1});//new THREE.MeshBasicMaterial({wireframe: true});//new THREE.MeshBasicMaterial({color: 0xff7700, vertexColors: 2,side: 2, emissive: 0x696969, specular:0x696969, shininess: 15});
+                        var mat2 = mat1;//new THREE.MeshBasicMaterial({color: 0xdd7700, vertexColors: 2,side: 2, emissive: 0x696969, specular:0x696969, shininess: 15});
+                        var mat3 = mat1;//new THREE.MeshBasicMaterial({color: 0xbb7700, vertexColors: 2,side: 2, emissive: 0x696969, specular:0x696969, shininess: 15});
+                        var mat4 = mat1;//new THREE.MeshBasicMaterial({color: 0x997700, vertexColors: 2,side: 2, emissive: 0x696969, specular:0x696969, shininess: 15});
+                        var mat5 = mat1;//new THREE.MeshBasicMaterial({color: 0x777700, vertexColors: 2,side: 2, emissive: 0x696969, specular:0x696969, shininess: 15});
+                        var mat6 = mat1;//new THREE.MeshBasicMaterial({color: 0x557700, vertexColors: 2,side: 2, emissive: 0x696969, specular:0x696969, shininess: 15});
+                        var mat7 = mat1;//new THREE.MeshBasicMaterial({color: 0x337700, vertexColors: 2,side: 2, emissive: 0x696969, specular:0x696969, shininess: 15});
+                        var mat8 = mat1;//new THREE.MeshBasicMaterial({color: 0x007700, vertexColors: 2,side: 2, emissive: 0x696969, specular:0x696969, shininess: 15});
+                        var badmat = new THREE.MeshBasicMaterial({map: textureImage2, side: 0});
+                        
+                        //univerzalna geomatria ale picu, nic take neexituje
+			//var geometry = new THREE.PlaneGeometry(a,a);
+                        function buildTriangle(p1, p2, p3, material, rotation)
+                        {
+                            var geom = new THREE.Geometry();
+                            
+                            if(rotation === false)
+                            {
+                                geom.vertices.push((p1));
+                                geom.vertices.push((p2));
+                                geom.vertices.push((p3));
+                                geom.faces.push( new THREE.Face3( 0, 1, 2 ) );
+                                geom.faceVertexUvs[ 0 ].push(
+                            [
+                                new THREE.Vector2( 1, 1 ),
+                                new THREE.Vector2( 1, 0 ),  
+                                new THREE.Vector2( 0, 0 )
+                            ] );
+                            }
+                            else
+                            {
+                                geom.vertices.push((p3));
+                                geom.vertices.push((p2));
+                                geom.vertices.push((p1));
+                                geom.faces.push( new THREE.Face3( 0, 1, 2 ) );
+                                geom.faceVertexUvs[ 0 ].push(
+                            [
+                                new THREE.Vector2( 0, 0 ),
+                                new THREE.Vector2( 0, 1 ),  
+                                new THREE.Vector2( 1, 1 )
+                            ] );
+                            }
+                                              
+                            geom.computeFaceNormals();
+
+                            var mesh= new THREE.Mesh(geom, material);
+                            scene.add(mesh);
+                        }
+                        
+                        //vytvori prekazku
+                        function createBox(point)
+                        {
+                            var geometry = new THREE.CubeGeometry( 4, 4, 4 );
+                            var cube = new THREE.Mesh( geometry, badmat );
+                            cube.position = point;
+                            scene.add( cube );
+                        }
+                        
+                        //vyrob tunel dlhy z
+                        var pocetkusov = 100;
+                        for(var z = 0; z <= pocetkusov*a; z += a)
+                        {
+                            //nasleduje maximalne neoptimalizovany kod.
+                            var A = new THREE.Vector3(x,y,z);
+                            var B = new THREE.Vector3(x+a,y,z);
+                            var C = new THREE.Vector3(x+a+v,y+v,z);
+                            var D = new THREE.Vector3(x+a+v,y+v+a,z);
+                            var E = new THREE.Vector3(x+a,y+(2*v)+a,z);
+                            var F = new THREE.Vector3(x,y+(2*v)+a,z);
+                            var G = new THREE.Vector3(x-v,y+v+a,z);
+                            var H = new THREE.Vector3(x-v,y+v,z);
+                            var A1 = new THREE.Vector3(x,y,z+a);
+                            var B1 = new THREE.Vector3(x+a,y,z+a);
+                            var C1 = new THREE.Vector3(x+a+v,y+v,z+a);
+                            var D1 = new THREE.Vector3(x+a+v,y+v+a,z+a);
+                            var E1 = new THREE.Vector3(x+a,y+v+a+v,z+a);
+                            var F1 = new THREE.Vector3(x,y+v+a+v,z+a);
+                            var G1 = new THREE.Vector3(x-v,y+v+a,z+a);
+                            var H1 = new THREE.Vector3(x-v,y+v,z+a);                           
+                            
+                            //postav trojuholniky
+                            buildTriangle(H, A, A1, mat1, false); //1.
+                            buildTriangle(H, H1, A1, mat1, true);
+                            buildTriangle(A, B, B1, mat2, false); //2.
+                            buildTriangle(A, A1, B1, mat2, true);
+                            buildTriangle(B, C, C1, mat3, false); //3.
+                            buildTriangle(B, B1, C1, mat3, true);
+                            buildTriangle(C, D, D1, mat4, false); //4.
+                            buildTriangle(C, C1, D1, mat4, true);
+                            buildTriangle(D, E, E1, mat5, false); //5.
+                            buildTriangle(D, D1, E1, mat5, true);
+                            buildTriangle(E, F, F1, mat6, false); //6.
+                            buildTriangle(E, E1, F1, mat6, true);
+                            buildTriangle(F, G, G1, mat7, false); //7.
+                            buildTriangle(F, F1, G1, mat7, true);
+                            buildTriangle(G, H, H1, mat8, false); //8.
+                            buildTriangle(G, G1, H1, mat8, true);
+                            
+                            //vygeneruj prekazku
+                            if(Math.floor((Math.random()*2)+1) === 2)
+                            {
+                                var strana = Math.floor((Math.random()*8)+1);
+                                switch(strana)
+                                {
+                                    case 1:
+                                        createBox(A.add(new THREE.Vector3(a / 2, a / 2, a / 2)));
+                                        break;
+                                    case 2:
+                                        
+                                        break;
+                                    case 3:
+                                        createBox(C.add(new THREE.Vector3((a / 2) * -1, a / 2, a / 2)));
+                                        break;
+                                    case 4:
+                                        
+                                        break;
+                                    case 5:
+                                        createBox(E.add(new THREE.Vector3((a / 2) * -1, (a / 2) * -1, a / 2)));
+                                        break;
+                                    case 6:
+                                        
+                                        break;
+                                    case 7:
+                                        createBox(G.add(new THREE.Vector3(a / 2, (a / 2) * -1, a / 2)));
+                                        break;
+                                    case 8:
+                                        
+                                        break;
+                                }
+                            }
+                        }
+                        
+                        //camera set up
+			camera.position.set(2,1,0);
+                        camera.up = new THREE.Vector3(0,1,1);
+                        //camera.lookAt(new THREE.Vector3(0,0,0));
+                        var i = 0;
+                        var cz = 0;
+                        
+                        //ovladanie
+                        document.addEventListener('keydown', function(e)
+                        {
+                            var key = e.keyCode;
+                            switch( key )
+                            {
+                               case 37: //left
+                                    otocenie += 2;
+                                    break;
+                                    
+                                case 39: //right
+                                    otocenie -= 2;
+                                    break;
+                        }
+            
+                        });
+                        
+                        function deviceMotionHandler(eventData) {
+                        acceleration = eventData.accelerationIncludingGravity;
+                        otocenie += (acceleration.y * -1);     
+                        }
+
+			var render = function () {
+                            requestAnimationFrame(render);
+                            
+                            //otocenie = (Math.sin(i / 7) + 1) * 180;
+                            otocenie += (otocenieI * -1);
+                            
+                            //camera update
+                            if(cz <= 400)
+                            {
+                                var cx = (3.5 * Math.cos(otocenie * Math.PI / 180)) + 2.18; //picovina, treba opravit
+                                var cy = (3.5 * Math.sin(otocenie * Math.PI / 180)) + 4.8; //treba opravit
+                                camera.position.set(cx,cy,cz);
+                                camera.lookAt(new THREE.Vector3(cx,cy,cz+10));
+                                
+                            }
+                            else
+                            {
+                                cz = 0;
+                            }
+                                camera.rotation.z = (-otocenie + 90) * Math.PI / 180;
+                            //camera.position.set(Math.sin(i)*5,5,30);
+                            //THREE.
+                            
+                            cz += speed;
+                            i += 0.1;
+                            renderer.render(scene, camera);
+			};
+
+			render();
+		</script>
+                <script>                    //build stats
+                    var stats = new Stats();
+stats.setMode(1); // 0: fps, 1: ms
+
+// Align top-left
+stats.domElement.style.position = 'absolute';
+stats.domElement.style.left = '0px';
+stats.domElement.style.top = '0px';
+
+document.body.appendChild( stats.domElement );
+
+setInterval( function () {
+
+    stats.begin();
+
+    // your code goes here
+
+    stats.end();
+
+}, 1000 / 60 );
+                   </script>
+                   <script>window.addEventListener('devicemotion', deviceMotionHandler, false);</script>
+                   <audio><source src="music.mp3"></audio>
+	</body>
+</html>

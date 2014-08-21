@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<html>
+    <head>
+        <title></title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script>
+            function deviceMotionHandler(eventData) {
+                acceleration = eventData.accelerationIncludingGravity;
+  //document.getElementById("rotation").innerHTML = acceleration.y;   
+  send( acceleration.y);
+}
+        </script>
+        <script>
+var socket;
+
+function init(){
+  var host = "ws://mertex.eu:12345/server.php";
+  try{
+    socket = new WebSocket(host);
+    //alert('WebSocket - status '+socket.readyState);
+    socket.onopen    = function(msg){ document.getElementById("rotation").innerHTML = "Welcome - status "+this.readyState; };
+    //socket.onmessage = function(msg){ console.log("Received: "+msg.data); };
+    socket.onclose   = function(msg){ document.getElementById("rotation").innerHTML = "Disconnected - status "+this.readyState; };
+  }
+  catch(ex){ alert(ex); }
+
+}
+
+function send(msg){
+  try{ socket.send(msg); } catch(ex){ }
+}
+function quit(){
+  log("Goodbye!");
+  socket.close();
+  socket=null;
+}
+</script></head>
+    <body onload="init();">
+        <div id="rotation">not supported</div>
+        <script>window.addEventListener('devicemotion', deviceMotionHandler, false);</script>
+    </body>
+</html>
